@@ -4,4 +4,5 @@ RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/l
 
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-COPY snippet .
+COPY payment_system .
+RUN python manage.py collectstatic --noinput

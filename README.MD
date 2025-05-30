@@ -25,26 +25,28 @@
          
 ## Структура проекта 
 ```text
-payments_system/
-├── manage.py
-├── payments_system/
-│   ├── init .py
-│   ├── settings.py          # Настройки проекта
-│   ├── urls.py              # Главный маршрутизатор URL-адресов
-│   ├── wsgi.py              # Конфигурация WSGI
-│   └── asgi.py              # Конфигурация ASGI
-├── payments/
-│   ├── migrations/          # Миграции базы данных
-│   ├── init .py
-│   ├── admin.py             # Регистрация моделей в админке
-│   ├── apps.py              # Конфигурация приложения
-│   ├── models.py            # Модели Django
-│   ├── serializers.py       # Сериализаторы DRF
-│   ├── tests.py             # Тесты
-│   ├── views.py             # Представления (views)
-│   └── urls.py              # Маршруты URL для приложения
-├── requirements.txt         # Зависимости проекта
-└── README.md                # Документация проекта
+├── docker-compose.yml          # Конфигурация Docker Compose
+├── Dockerfile                  # Dockerfile для сборки образа
+├── .env                        # Переменные окружения
+├── payment_system              # Основной каталог проекта
+│   ├── create_superuser.py     # Скрипт для создания суперпользователя
+│   ├── db.sqlite3              # Локальная SQLite база данных (опционально)
+│   ├── entrypoint.sh           # Скрипт для запуска приложения
+│   ├── manage.py               # Утилита Django
+│   ├── payments                # Приложение для обработки платежей
+│   │   ├── admin.py            # Регистрация моделей в админке
+│   │   ├── apps.py             # Конфигурация приложения
+│   │   ├── models.py           # Модели Django
+│   │   ├── serializers.py      # Сериализаторы DRF
+│   │   ├── tests.py            # Тесты
+│   │   ├── urls.py             # Маршруты URL для приложения
+│   │   └── views.py            # Представления (views)
+│   └── payment_system          # Настройки проекта
+│       ├── settings.py         # Настройки Django
+│       ├── urls.py             # Главный маршрутизатор URL-адресов
+│       └── wsgi.py             # Конфигурация WSGI
+├── README.MD                   # Документация проекта
+└── requirements.txt            # Зависимости проекта
 ```
 
 ## Установка
@@ -53,24 +55,86 @@ payments_system/
    ```bash
    git clone https://github.com/Mefistop/django_payment_system.git 
    ```
-2. Создайте виртуальное окружение:
+### Запуск без использования Docker
+1. Создайте виртуальное окружение:
    ```bash
     python3 -m venv venv
     source venv/bin/activate  # Для Linux/MacOS
     venv\Scripts\activate     # Для Windows
    ```
-3. Установите зависимости:
+2. Установите зависимости:
    ```bash
     pip install -r requirements.txt 
    ```
-4. Примените миграции:
+3. Примените миграции:
     ```bash
    python manage.py migrate
    ```
-5. Запустите сервер:
+4. Установите настройки базы данных в payment_system.settings.py (раскомментируйте при необходимости)
+   ```text
+   DATABASES = {
+       'default': {
+           'ENGINE': 'django.db.backends.sqlite3',
+           'NAME': BASE_DIR / 'db.sqlite3',
+       }
+   }
+   ```
+4. Запустите сервер:
     ```bash
     python manage.py runserver
     ```
+### Запуск c использованием Docker
+
+Создайте файл `.env` в корневой директории проекта и добавьте следующие переменные окружения:
+
+```env
+DEBUG=True
+SECRET_KEY=your-secret-key
+DB_NAME=blog_db
+DB_USER=blog_user
+DB_PASSWORD=blog_password
+DB_HOST=db
+DB_PORT=5432
+DJANGO_SUPERUSER_USERNAME=admin
+DJANGO_SUPERUSER_PASSWORD=adminpassword
+DJANGO_SUPERUSER_EMAIL=admin@example.com
+```
+Замените your-secret-key на случайную строку (например, используйте Django Secret Key Generator ).
+
+Установите настройки базы данных в payment_system.settings.py (раскомментируйте при необходимости)
+   ```text
+      DATABASES = {
+          "default": {
+              "ENGINE": "django.db.backends.postgresql",
+              "NAME": os.getenv("DB_NAME", "snippet_db"),  # имя базы данных
+              "USER": os.getenv("DB_USER", "admin"),  # имя пользователя
+              "PASSWORD": os.getenv("DB_PASSWORD", "admin"),  # пароль
+              "HOST": os.getenv("DB_HOST", "db"),  # или IP-адрес сервера базы данных
+              "PORT": os.getenv("DB_PORT", "5432"),  # порт
+          },
+      }
+   ```
+
+Выполните командy:
+```bash
+    docker compose up --build
+```
+
+Это создаст и запустит контейнеры для Django, PostgreSQL. После завершения сборки проект будет доступен по адресу:
+```http
+http://localhost:8000/
+```
+
+**Автоматические миграции и создание суперпользователя**
+
+**Во время запуска Docker автоматически выполняет следующие действия**:
+
+- Применяет миграции базы данных.
+- Создает суперпользователя (если он еще не существует) с данными, указанными в переменных окружения:
+  - `DJANGO_SUPERUSER_USERNAME`
+  - `DJANGO_SUPERUSER_PASSWORD`
+  - `DJANGO_SUPERUSER_EMAIL` (опционально)
+- Собирает статические файлы.
    
 ## API
 1. POST /api/webhook/bank/ 
