@@ -1,4 +1,4 @@
-# Payments System - Django Interview
+# Payments System 
 
 ## Описание
 
